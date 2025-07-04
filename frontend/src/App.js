@@ -35,6 +35,7 @@ export default function App() {
     setMsg("加入房间成功，等待发牌。 你是座位：" + data.player_idx);
   };
 
+<<<<<<< HEAD
   // 试玩：一键创建房间+自己+3个AI
   const tryPlay = async () => {
     setMsg('正在创建试玩房间...');
@@ -66,6 +67,8 @@ export default function App() {
     setMsg("试玩房间已准备好，可以理牌！");
   };
 
+=======
+>>>>>>> dbd25b148fe9d454a95645c0a3a84ab0ff46e7ce
   // 发牌
   const startGame = async () => {
     await fetch(`${BACKEND_DOMAIN}/api/start-game.php`, {
@@ -89,17 +92,23 @@ export default function App() {
   // 当前玩家理牌状态
   const myPlayer = gameState && gameState.players && gameState.players[playerIdx] ? gameState.players[playerIdx] : null;
 
+<<<<<<< HEAD
   // AI名称映射
   const getPlayerName = idx =>
     idx === 0 ? "你" : `AI${idx}`;
 
+=======
+>>>>>>> dbd25b148fe9d454a95645c0a3a84ab0ff46e7ce
   return (
     <div style={{ padding: 20 }}>
       <h2>十三水多人房间游戏</h2>
       {!joined ? (
         <div>
           <button onClick={createRoom}>创建房间</button>
+<<<<<<< HEAD
           <button onClick={tryPlay} style={{marginLeft:8}}>试玩（和3个AI玩）</button>
+=======
+>>>>>>> dbd25b148fe9d454a95645c0a3a84ab0ff46e7ce
           <div style={{ margin: "10px 0" }}>
             <input placeholder="房间号" value={roomId} onChange={e=>setRoomId(e.target.value)} />
             <button onClick={joinRoom}>加入房间</button>
@@ -118,7 +127,11 @@ export default function App() {
       <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
         {gameState && gameState.players && gameState.players.map((p, idx) => (
           <div key={idx}>
+<<<<<<< HEAD
             {getPlayerName(idx)}: <Hand hand={p.hand} />
+=======
+            玩家{idx+1}: <Hand hand={p.hand} />
+>>>>>>> dbd25b148fe9d454a95645c0a3a84ab0ff46e7ce
           </div>
         ))}
       </div>
@@ -135,7 +148,11 @@ export default function App() {
       <div>
         {gameState && gameState.players.map((p, idx) => (
           <div key={idx}>
+<<<<<<< HEAD
             {getPlayerName(idx)}：
+=======
+            玩家{idx+1}：
+>>>>>>> dbd25b148fe9d454a95645c0a3a84ab0ff46e7ce
             {p.dun ? p.dun.map((dun, i) => (
               <span key={i}>
                 [{dun && dun.length > 0 ? dun.join(', ') : ''}]
