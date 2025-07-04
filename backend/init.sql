@@ -1,0 +1,14 @@
+CREATE TABLE IF NOT EXISTS rooms (
+  room_id VARCHAR(32) PRIMARY KEY,
+  status VARCHAR(16) DEFAULT 'waiting',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS players (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  room_id VARCHAR(32),
+  player_idx INT,
+  hand TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(room_id, player_idx)
+);
