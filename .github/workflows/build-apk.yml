@@ -8,11 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
-      SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
-      SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
-      SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
 
     steps:
       - name: Checkout code
@@ -37,19 +32,8 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Install Capacitor CLI and Android platform
-        working-directory: frontend
-        run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android --save
-
-      - name: Capacitor init & add android
-        working-directory: frontend
-        run: |
-          npx cap init shisanshui-multi com.example.shisanshui --web-dir=build
-          npx cap add android
-
-      # 强制全项目所有 gradle 文件都用 Java 17
-      - name: 强制所有 Gradle Java 版本为 17
+      # Patch gradle files to avoid Java 21 compatibility issues
+      - name: Patch all Gradle files to use Java 17
         run: |
           find . -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -print0 | xargs -0 sed -i 's/JavaVersion\.VERSION_21/JavaVersion.VERSION_17/g'
           find . -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -print0 | xargs -0 sed -i 's/sourceCompatibility[ ]*=[ ]*21/sourceCompatibility = 17/g'
@@ -57,68 +41,18 @@ jobs:
           find . -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -print0 | xargs -0 sed -i 's/sourceCompatibility[ ]*=[ ]*JavaVersion\.VERSION_21/sourceCompatibility = JavaVersion.VERSION_17/g'
           find . -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -print0 | xargs -0 sed -i 's/targetCompatibility[ ]*=[ ]*JavaVersion\.VERSION_21/targetCompatibility = JavaVersion.VERSION_17/g'
 
-      # 检查是否还有 21 的配置，便于调试
+      # 检查还有没有 VERSION_21
       - name: 检查是否还有 VERSION_21
         run: |
           grep -r --include="*.gradle*" "VERSION_21" . || true
           grep -r --include="*.gradle*" "sourceCompatibility" . || true
           grep -r --include="*.gradle*" "targetCompatibility" . || true
 
-      - name: Prepare app directory & decode keystore from secrets
-        if: env.SIGNING_KEYSTORE_BASE64 != ''
-        run: |
-          mkdir -p frontend/android/app
-          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > frontend/android/app/release.keystore
-
-      - name: Configure signing in build.gradle
-        if: env.SIGNING_KEYSTORE_BASE64 != ''
-        run: |
-          GRADLE_FILE="frontend/android/app/build.gradle"
-          if ! grep -q "signingConfigs" "$GRADLE_FILE"; then
-            awk '/defaultConfig {/ {
-              print;
-              print "    signingConfigs {";
-              print "        release {";
-              print "            storeFile file('\''release.keystore'\'')";
-              print "            storePassword '\''$SIGNING_KEYSTORE_PASSWORD'\''";
-              print "            keyAlias '\''$SIGNING_KEY_ALIAS'\''";
-              print "            keyPassword '\''$SIGNING_KEY_PASSWORD'\''";
-              print "        }";
-              print "    }";
-              next
-            } 1' "$GRADLE_FILE" > tmp && mv tmp "$GRADLE_FILE"
-          fi
-          if ! grep -A 1 "buildTypes" "$GRADLE_FILE" | grep -q "release"; then
-            awk '/buildTypes {/ {
-              print;
-              print "        release {";
-              print "            signingConfig signingConfigs.release";
-              print "            minifyEnabled false";
-              print "            proguardFiles getDefaultProguardFile('\''proguard-android-optimize.txt'\''), '\''proguard-rules.pro'\''";
-              print "        }";
-              next
-            } 1' "$GRADLE_FILE" > tmp && mv tmp "$GRADLE_FILE"
-          fi
-
-      - name: Build signed APK (release)
-        if: env.SIGNING_KEYSTORE_BASE64 != ''
-        working-directory: frontend/android
-        run: ./gradlew assembleRelease
-
-      - name: Build unsigned APK (debug)
-        if: env.SIGNING_KEYSTORE_BASE64 == ''
+      - name: Build APK
         working-directory: frontend/android
         run: ./gradlew assembleDebug
 
-      - name: Upload APK (signed release)
-        if: env.SIGNING_KEYSTORE_BASE64 != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release.apk
-          path: frontend/android/app/build/outputs/apk/release/app-release.apk
-
-      - name: Upload APK (unsigned debug)
-        if: env.SIGNING_KEYSTORE_BASE64 == ''
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-debug.apk
