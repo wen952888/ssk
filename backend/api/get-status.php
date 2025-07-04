@@ -21,14 +21,17 @@ if (!$room_res || mysqli_num_rows($room_res) == 0) {
 }
 $room = mysqli_fetch_assoc($room_res);
 
-// 玩家和手牌
+// 玩家、手牌和dun
 $players = [];
-$res = mysqli_query($conn, "SELECT player_idx, hand FROM players WHERE room_id='$room_id' ORDER BY player_idx ASC");
+$res = mysqli_query($conn, "SELECT player_idx, hand, dun FROM players WHERE room_id='$room_id' ORDER BY player_idx ASC");
 while ($row = mysqli_fetch_assoc($res)) {
     $hand = json_decode($row['hand'], true);
-    // 保证每个玩家的hand为数组
     if (!is_array($hand)) $hand = [];
-    $players[] = $hand;
+    $dun = $row['dun'] ? json_decode($row['dun'], true) : null;
+    $players[] = [
+        'hand' => $hand,
+        'dun' => $dun
+    ];
 }
 
 echo json_encode([
