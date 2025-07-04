@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Hand from './components/Hand';
 import usePollingGameState from './hooks/usePollingGameState';
+import ArrangeArea from './components/ArrangeArea';
 
 const FRONTEND_DOMAIN = "https://kk.wenge.ip-ddns.com";
 const BACKEND_DOMAIN = "https://9525.ip-ddns.com";
@@ -10,7 +11,6 @@ export default function App() {
   const [playerIdx, setPlayerIdx] = useState('');
   const [joined, setJoined] = useState(false);
   const [playersCount, setPlayersCount] = useState(4);
-  const [name, setName] = useState('');
   const [msg, setMsg] = useState('');
   const gameState = usePollingGameState(roomId);
 
@@ -45,6 +45,19 @@ export default function App() {
     setMsg("已发牌！");
   };
 
+  // 提交理牌
+  const submitDun = async (duns) => {
+    await fetch(`${BACKEND_DOMAIN}/api/set-dun.php`, {
+      method: "POST",
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body: `room_id=${roomId}&player_idx=${playerIdx}&dun=${encodeURIComponent(JSON.stringify(duns))}`
+    });
+    setMsg("理牌已提交！");
+  };
+
+  // 当前玩家理牌状态
+  const myPlayer = gameState && gameState.players && gameState.players[playerIdx] ? gameState.players[playerIdx] : null;
+
   return (
     <div style={{ padding: 20 }}>
       <h2>十三水多人房间游戏</h2>
@@ -67,9 +80,31 @@ export default function App() {
       <hr />
       <h3>玩家手牌</h3>
       <div style={{display:'flex',flexDirection:'column',gap:'12px'}}>
-        {gameState && gameState.players && gameState.players.map((hand, idx) => (
+        {gameState && gameState.players && gameState.players.map((p, idx) => (
           <div key={idx}>
-            玩家{idx+1}: <Hand hand={hand} />
+            玩家{idx+1}: <Hand hand={p.hand} />
+          </div>
+        ))}
+      </div>
+      {/* 理牌区 */}
+      {joined && myPlayer && myPlayer.hand && myPlayer.hand.length === 13 && !myPlayer.dun && (
+        <>
+          <h3>理牌区</h3>
+          <ArrangeArea hand={myPlayer.hand} onSubmit={submitDun} />
+        </>
+      )}
+      {/* 展示各玩家牌墩 */}
+      <hr />
+      <h3>各玩家牌墩</h3>
+      <div>
+        {gameState && gameState.players.map((p, idx) => (
+          <div key={idx}>
+            玩家{idx+1}：
+            {p.dun ? p.dun.map((dun, i) => (
+              <span key={i}>
+                [{dun && dun.length > 0 ? dun.join(', ') : ''}]
+              </span>
+            )) : '未提交'}
           </div>
         ))}
       </div>
